@@ -1,413 +1,649 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Playlist - Marcos</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Última vez</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --panel:#12141b;
+      --panel2:#171a22;
+      --text:#e8eaf0;
+      --muted:#a7adbd;
+      --line: rgba(255,255,255,0.10);
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% 0%, #141827 0%, #0b0c10 55%, #08090d 100%);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 18px 16px 40px; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+    .top{
+      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
+      flex-wrap:wrap; margin-bottom:14px;
+    }
+    h1{ font-size:26px; line-height:1.1; margin:0; }
+    .sub{ margin:8px 0 0; color:var(--muted); font-size:14px; }
 
-        h1, h2, h3 { color: #0f172a; margin-top: 0; }
+    .top-actions{ display:flex; gap:10px; align-items:center; }
 
-        .container { display: grid; gap: 20px; }
-        .card { background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      font-size: 14px;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.07); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: rgba(80, 140, 255, 0.18);
+      border-color: rgba(80, 140, 255, 0.35);
+    }
+    .btn.primary:hover{ background: rgba(80, 140, 255, 0.25); }
+    .btn.danger{
+      background: rgba(255, 80, 80, 0.14);
+      border-color: rgba(255, 80, 80, 0.32);
+    }
+    .btn.danger:hover{ background: rgba(255, 80, 80, 0.22); }
+    .btn.ghost{ background: transparent; }
 
-        .actions-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    label.file{ display:inline-flex; align-items:center; gap:8px; }
+    label.file input{ display:none; }
 
-        button {
-            padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.9; }
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-danger { background-color: var(--danger); color: white; }
-        .btn-success { background-color: var(--success); color: white; }
-        .btn-outline { border: 1px solid #ccc; background: white; color: #333; }
-        .btn-icon { padding: 4px 8px; font-size: 1.1em; background: transparent; }
-        
-        /* Botón específico para sumar escuchas */
-        .btn-plus {
-            background-color: #dbeafe; 
-            color: #1e40af;
-            padding: 2px 8px;
-            font-size: 0.8rem;
-            margin-left: 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-        .btn-plus:hover { background-color: #bfdbfe; }
+    .add, .list{
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .add{ margin: 14px 0; }
+    .add h2, .list h2{ margin: 0 0 10px; font-size: 16px; }
 
-        input, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; margin-right: 10px; margin-bottom: 10px; }
-        label { display: block; font-size: 0.85em; color: #64748b; margin-bottom: 4px; }
+    .add-row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .add-row input{
+      flex: 1 1 220px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      outline: none;
+      font-size: 14px;
+    }
+    .add-row input:focus{ border-color: rgba(80,140,255,0.45); }
+    .hint{ margin:10px 0 0; color:var(--muted); font-size:13px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #f1f5f9; font-weight: 600; }
-        
-        .active-row { border-left: 4px solid var(--success); background-color: #f0fdf4; }
-        .inactive-row { opacity: 0.7; }
+    .list-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+    .small{ color:var(--muted); font-size:13px; }
 
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .stats { display: flex; justify-content: space-between; font-size: 0.9em; color: #64748b; margin-bottom: 10px; }
+    .card{
+  position: relative;
 
-        /* Estilos del Modal */
-        .modal {
-            display: none; 
-            position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-            align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background-color: #fff; padding: 25px; border-radius: 8px;
-            width: 90%; max-width: 400px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .modal-actions { text-align: right; margin-top: 15px; }
-        .form-group { margin-bottom: 12px; }
-        .form-group input { width: 100%; box-sizing: border-box; }
+  /* NUEVO: la tarjeta se tiñe con el color calculado */
+  border: 1px solid var(--line);
+  border-color: color-mix(in oklab, var(--bar) 55%, rgba(255,255,255,0.12));
 
-    </style>
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bar) 18%, rgba(255,255,255,0.04)) 0%,
+    rgba(255,255,255,0.035) 55%,
+    rgba(255,255,255,0.03) 100%
+  );
+
+  border-radius: 16px;
+  padding: 12px 12px 12px 14px;
+
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.25),
+    0 0 0 1px color-mix(in oklab, var(--bar) 30%, transparent),
+    0 0 22px color-mix(in oklab, var(--bar) 22%, transparent);
+
+  overflow:hidden;
+  cursor:pointer;
+}
+
+.card:hover{
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bar) 26%, rgba(255,255,255,0.05)) 0%,
+    rgba(255,255,255,0.05) 60%,
+    rgba(255,255,255,0.04) 100%
+  );
+}
+
+.card::before{
+  content:"";
+  position:absolute; left:0; top:0; bottom:0;
+  width: 10px;
+  background: var(--bar, rgba(255,255,255,0.12));
+}
+
+.card-top{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+.title{ font-weight:700; font-size:15px; line-height:1.25; }
+
+.meta{
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill{
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.18);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.pill strong{ color: var(--text); }
+
+.card-actions{ display:flex; gap: 8px; align-items:center; }
+.mini{ padding: 8px 10px; border-radius: 12px; font-size: 13px; }
+
+.backdrop{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,0.55);
+  display:flex; align-items:center; justify-content:center;
+  padding: 18px;
+  z-index: 50;
+}
+.hidden{ display:none; }
+
+.modal{
+  width: min(560px, 100%);
+  background: linear-gradient(180deg, rgba(23,26,34,0.98), rgba(18,20,27,0.98));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.modal-head{
+  display:flex; justify-content: space-between; align-items:center;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h3{ margin:0; font-size: 16px; }
+
+.icon{
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-size: 16px;
+}
+
+.modal-body{
+  padding: 14px;
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field span{
+  display:block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.field input{
+  width:100%;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  outline:none;
+  font-size: 14px;
+}
+.field input:focus{ border-color: rgba(80,140,255,0.45); }
+
+.row{ display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+.grow{ flex:1; }
+
+.modal-foot{
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+  </style>
 </head>
 <body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>¿Cuándo fue la última vez que…?</h1>
+        <p class="sub">Toca un evento para editar · ✅ Hecho hoy actualiza la fecha · Se guarda en este navegador.</p>
+      </div>
+      <div class="top-actions">
+        <button id="btnExport" class="btn ghost">Exportar</button>
+        <label class="btn ghost file">
+          Importar
+          <input id="fileImport" type="file" accept="application/json" />
+        </label>
+      </div>
+    </header>
 
-    <h1>🎵 Playlist Manager</h1>
+    <section class="add">
+      <h2>Añadir evento</h2>
+      <div class="add-row">
+        <input id="newName" type="text" placeholder="Ej: Lavar toallas" maxlength="60" />
+        <input id="newTarget" type="number" placeholder="Objetivo (días) opcional" min="1" max="3650" />
+        <button id="btnAdd" class="btn primary">Añadir</button>
+      </div>
+      <p class="hint">Si dejas el objetivo vacío, el evento solo mostrará “hace X días” (barra neutra).</p>
+    </section>
 
-    <div class="actions-bar">
-        <input type="file" id="csvFileInput" accept=".csv" style="display:none">
-        <button onclick="document.getElementById('csvFileInput').click()" class="btn-outline">📂 Importar CSV</button>
-        <button onclick="exportCSV()" class="btn-outline">💾 Exportar CSV</button>
-        <button onclick="clearData()" class="btn-outline" style="color:var(--danger); border-color:var(--danger)">🗑️ Borrar Todo</button>
+    <section class="list">
+      <div class="list-head">
+        <h2>Eventos</h2>
+        <div class="small" id="todayLabel"></div>
+      </div>
+      <div id="cards" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- Modal editar -->
+  <div id="modalBackdrop" class="backdrop hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">Editar evento</h3>
+        <button id="btnClose" class="icon" title="Cerrar" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span>Nombre</span>
+          <input id="editName" type="text" maxlength="60" />
+        </label>
+
+        <label class="field">
+          <span>Objetivo (días) — opcional</span>
+          <input id="editTarget" type="number" min="1" max="3650" placeholder="Vacío = sin objetivo" />
+        </label>
+
+        <label class="field">
+          <span>Última vez</span>
+          <input id="editLast" type="date" />
+        </label>
+
+        <div class="row">
+          <button id="btnDoneToday" class="btn">✅ Hecho hoy</button>
+          <span class="grow"></span>
+          <button id="btnDelete" class="btn danger">Eliminar</button>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button id="btnCancel" class="btn ghost">Cancelar</button>
+        <button id="btnSave" class="btn primary">Guardar</button>
+      </div>
     </div>
+  </div>
 
-    <div class="container">
-        
-        <div class="card">
-            <h2>Registrar Nueva Canción</h2>
-            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
-                <div><label>Canción</label><input type="text" id="inputCancion" placeholder="Nombre..."></div>
-                <div><label>Fecha Entrada</label><input type="date" id="inputFecha"></div>
-                <div><label>Escuchas</label><input type="number" id="inputEscuchas" value="0" style="width: 70px;"></div>
-                <button onclick="addSong()" class="btn-primary" style="margin-bottom: 10px;">Añadir</button>
-            </div>
-        </div>
+  <script>
+    "use strict";
 
-        <div class="card">
-            <h2>Escuchas (Top 25 Activas)</h2>
-            <div class="chart-container"><canvas id="listenChart"></canvas></div>
-        </div>
+    const STORAGE_KEY = "ultima_vez_events_v1";
 
-        <div class="card">
-            <div class="stats">
-                <span id="totalSongsCount">Total: 0</span>
-                <span id="activeSongsCount" style="color: var(--success); font-weight:bold;">Activas: 0</span>
-            </div>
-            <h2>Listado Completo</h2>
-            <div style="overflow-x: auto;">
-                <table id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>Canción</th>
-                            <th>Entrada</th>
-                            <th>Salida</th>
-                            <th>Días</th>
-                            <th>Escuchas</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
 
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <h3>Editar Entrada</h3>
-            <div class="form-group">
-                <label>Nombre de la Canción</label>
-                <input type="text" id="editCancion">
-            </div>
-            <div class="form-group">
-                <label>Fecha Entrada</label>
-                <input type="date" id="editFechaEntrada">
-            </div>
-            <div class="form-group">
-                <label>Fecha Salida (Dejar vacío si sigue activa)</label>
-                <input type="date" id="editFechaSalida">
-            </div>
-            <div class="form-group">
-                <label>Escuchas</label>
-                <input type="number" id="editEscuchas">
-            </div>
-            <div class="modal-actions">
-                <button onclick="closeModal()" class="btn-outline">Cancelar</button>
-                <button onclick="saveEdit()" class="btn-success">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
-
-<script>
-    let songsData = [];
-    let myChart = null;
-    let editingIndex = null; 
-
-    window.onload = function() {
-        document.getElementById('inputFecha').valueAsDate = new Date();
-        const storedData = localStorage.getItem('playlistData');
-        if (storedData) {
-            songsData = JSON.parse(storedData);
-            renderAll();
-        }
-        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect, false);
-    };
-
-    // --- Lógica de Negocio ---
-
-    function getActiveSongs() {
-        const noExitDate = songsData.filter(s => !s.fecha_salida || s.fecha_salida.trim() === '');
-        return noExitDate.slice(-25);
+    function todayISO() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
     }
 
-    function calculateDays(startStr, endStr) {
-        if (!startStr || !endStr) return '';
-        const start = new Date(startStr);
-        const end = new Date(endStr);
-        if (isNaN(start) || isNaN(end)) return '';
-        const diffTime = Math.abs(end - start);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    function daysBetween(fromISO, toISO) {
+      const from = new Date(fromISO + "T00:00:00");
+      const to = new Date(toISO + "T00:00:00");
+      const ms = to - from;
+      return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
     }
 
-    function addSong() {
-        const cancion = document.getElementById('inputCancion').value;
-        const fecha = document.getElementById('inputFecha').value;
-        const escuchas = document.getElementById('inputEscuchas').value;
-
-        if (!cancion || !fecha) { alert("Falta nombre o fecha"); return; }
-
-        songsData.push({
-            cancion: cancion,
-            fecha_entrada: fecha,
-            fecha_salida: '',
-            dias_en_playlist: '',
-            Escuchas: parseFloat(escuchas) || 0
-        });
-        saveAndRender();
-        document.getElementById('inputCancion').value = '';
+    function uid() {
+      return "e_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
 
-    // NUEVA FUNCIÓN: Sumar 1 a Escuchas
-    function addOneEscucha(index) {
-        let current = parseFloat(songsData[index].Escuchas) || 0;
-        songsData[index].Escuchas = current + 1;
-        saveAndRender();
+    // Gradiente continuo verde->rojo + se oscurece si te pasas
+    function barColor(dias_pasados, objetivo_dias) {
+      if (!objetivo_dias || objetivo_dias <= 0) return "rgba(255,255,255,0.18)";
+
+      const ratio = dias_pasados / objetivo_dias;
+      const progress = clamp(ratio, 0, 1);      // 0..1
+      const hue = 120 * (1 - progress);         // 120 verde → 0 rojo
+
+      const over = clamp(ratio - 1, 0, 1);      // 0..1 si te pasas (hasta 2x)
+      const light = 46 - 14 * over;             // más tarde → más oscuro
+
+      return `hsl(${hue.toFixed(0)}, 85%, ${light.toFixed(0)}%)`;
     }
 
-    function markAsExit(index) {
-        const today = new Date().toISOString().split('T')[0];
-        songsData[index].fecha_salida = today;
-        songsData[index].dias_en_playlist = calculateDays(songsData[index].fecha_entrada, today);
-        saveAndRender();
+    function urgencyScore(e, today) {
+      if (!e.targetDays) return -1;
+      const d = daysBetween(e.lastDone, today);
+      return d / e.targetDays;
     }
 
-    function deleteSong(index) {
-        if(confirm('¿Borrar definitivamente?')) {
-            songsData.splice(index, 1);
-            saveAndRender();
-        }
+    function initialEvents() {
+      const t = todayISO();
+      return [
+        { id: uid(), name: "Cambiar sábanas", targetDays: 14, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar baño", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar cristales del baño", targetDays: 30, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar el suelo", targetDays: 7, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar toallas", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar bata", targetDays: 14, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar fular del sofá", targetDays: 30, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar vaqueros azul claro", targetDays: 18, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar vaqueros azul oscuro", targetDays: 18, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar vaqueros negros", targetDays: 18, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar pijama", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar chándal", targetDays: 9, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Cortarse el pelo", targetDays: 40, lastDone: t, createdAt: t },
+        { id: uid(), name: "Cambiar cepillo de dientes", targetDays: 90, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Llamar a Giovanni", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Llamar a Cande", targetDays: 14, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Salir de fiesta", targetDays: null, lastDone: t, createdAt: t },
+      ];
     }
 
-    // --- Modal ---
+    function loadEvents() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const seed = initialEvents();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+      try {
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) throw new Error("Formato inválido");
+        return arr;
+      } catch {
+        const seed = initialEvents();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+    }
 
-    function openEditModal(originalIndex) {
-        editingIndex = originalIndex;
-        const song = songsData[originalIndex];
-        document.getElementById('editCancion').value = song.cancion;
-        document.getElementById('editFechaEntrada').value = song.fecha_entrada;
-        document.getElementById('editFechaSalida').value = song.fecha_salida || '';
-        document.getElementById('editEscuchas').value = song.Escuchas;
-        document.getElementById('editModal').style.display = 'flex';
+    function saveEvents(events) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // DOM
+    const cardsEl = document.getElementById("cards");
+    const todayLabelEl = document.getElementById("todayLabel");
+
+    const newNameEl = document.getElementById("newName");
+    const newTargetEl = document.getElementById("newTarget");
+    const btnAddEl = document.getElementById("btnAdd");
+
+    const btnExportEl = document.getElementById("btnExport");
+    const fileImportEl = document.getElementById("fileImport");
+
+    const backdropEl = document.getElementById("modalBackdrop");
+    const btnCloseEl = document.getElementById("btnClose");
+    const btnCancelEl = document.getElementById("btnCancel");
+    const btnSaveEl = document.getElementById("btnSave");
+    const btnDeleteEl = document.getElementById("btnDelete");
+    const btnDoneTodayEl = document.getElementById("btnDoneToday");
+
+    const editNameEl = document.getElementById("editName");
+    const editTargetEl = document.getElementById("editTarget");
+    const editLastEl = document.getElementById("editLast");
+
+    let events = loadEvents();
+    let selectedId = null;
+
+    function render() {
+      const t = todayISO();
+      todayLabelEl.textContent = `Hoy: ${t}`;
+
+      const sorted = [...events].sort((a, b) => urgencyScore(b, t) - urgencyScore(a, t));
+      cardsEl.innerHTML = "";
+
+      for (const e of sorted) {
+        const days = daysBetween(e.lastDone, t);
+        const bar = barColor(days, e.targetDays);
+        const ratio = e.targetDays ? (days / e.targetDays) : null;
+
+        const metaBits = [];
+        metaBits.push(`<span class="pill">⏱️ <strong>${days}</strong> días</span>`);
+        if (e.targetDays) metaBits.push(`<span class="pill">🎯 ${e.targetDays} días</span>`);
+        if (ratio !== null) metaBits.push(`<span class="pill">⚡ ${(ratio * 100).toFixed(0)}%</span>`);
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.setProperty("--bar", bar);
+        card.dataset.id = e.id;
+
+        card.innerHTML = `
+          <div class="card-top">
+            <div>
+              <div class="title">${escapeHtml(e.name)}</div>
+              <div class="meta">${metaBits.join("")}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn mini done" data-id="${e.id}" title="Marcar como hecho hoy">✅</button>
+            </div>
+          </div>
+        `;
+
+        cardsEl.appendChild(card);
+      }
+    }
+
+    function openModal(id) {
+      selectedId = id;
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+
+      editNameEl.value = e.name ?? "";
+      editTargetEl.value = (e.targetDays ?? "") === null ? "" : (e.targetDays ?? "");
+      editLastEl.value = e.lastDone ?? todayISO();
+
+      backdropEl.classList.remove("hidden");
+      backdropEl.setAttribute("aria-hidden", "false");
+      editNameEl.focus();
     }
 
     function closeModal() {
-        document.getElementById('editModal').style.display = 'none';
-        editingIndex = null;
+      selectedId = null;
+      backdropEl.classList.add("hidden");
+      backdropEl.setAttribute("aria-hidden", "true");
+    }
+
+    function addEvent() {
+      const name = (newNameEl.value || "").trim();
+      const targetRaw = (newTargetEl.value || "").trim();
+
+      if (!name) { alert("Pon un nombre para el evento."); return; }
+
+      let targetDays = null;
+      if (targetRaw) {
+        const n = Number(targetRaw);
+        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo."); return; }
+        targetDays = Math.round(n);
+      }
+
+      const t = todayISO();
+      events.push({ id: uid(), name, targetDays, lastDone: t, createdAt: t });
+
+      saveEvents(events);
+      newNameEl.value = "";
+      newTargetEl.value = "";
+      render();
+    }
+
+    function markDoneToday(id) {
+      const t = todayISO();
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.lastDone = t;
+      saveEvents(events);
+      render();
     }
 
     function saveEdit() {
-        if (editingIndex === null) return;
-        const cancion = document.getElementById('editCancion').value;
-        const entrada = document.getElementById('editFechaEntrada').value;
-        const salida = document.getElementById('editFechaSalida').value;
-        const escuchas = document.getElementById('editEscuchas').value;
+      const e = events.find(x => x.id === selectedId);
+      if (!e) return;
 
-        if (!cancion || !entrada) { alert("Nombre y Fecha de Entrada son obligatorios"); return; }
+      const name = (editNameEl.value || "").trim();
+      const last = editLastEl.value;
+      const targetRaw = (editTargetEl.value || "").trim();
 
-        songsData[editingIndex].cancion = cancion;
-        songsData[editingIndex].fecha_entrada = entrada;
-        songsData[editingIndex].fecha_salida = salida;
-        songsData[editingIndex].Escuchas = parseFloat(escuchas) || 0;
+      if (!name) { alert("El nombre no puede estar vacío."); return; }
+      if (!last) { alert("La fecha de 'última vez' es obligatoria."); return; }
 
-        if (salida) {
-            songsData[editingIndex].dias_en_playlist = calculateDays(entrada, salida);
-        } else {
-            songsData[editingIndex].dias_en_playlist = '';
+      let targetDays = null;
+      if (targetRaw) {
+        const n = Number(targetRaw);
+        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo (o déjalo vacío)."); return; }
+        targetDays = Math.round(n);
+      }
+
+      e.name = name;
+      e.lastDone = last;
+      e.targetDays = targetDays;
+
+      saveEvents(events);
+      closeModal();
+      render();
+    }
+
+    function deleteSelected() {
+      const e = events.find(x => x.id === selectedId);
+      if (!e) return;
+      if (!confirm(`¿Eliminar "${e.name}"?`)) return;
+
+      events = events.filter(x => x.id !== selectedId);
+      saveEvents(events);
+      closeModal();
+      render();
+    }
+
+    function doneTodaySelected() {
+      if (!selectedId) return;
+      markDoneToday(selectedId);
+      editLastEl.value = todayISO();
+    }
+
+    function exportJSON() {
+      const payload = { exportedAt: new Date().toISOString(), events, version: 1 };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ultima_vez_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(String(reader.result || ""));
+          const arr = Array.isArray(obj) ? obj : obj.events;
+          if (!Array.isArray(arr)) throw new Error("No encuentro 'events'.");
+
+          const normalized = arr.map((x) => ({
+            id: x.id || uid(),
+            name: String(x.name || "").trim() || "Sin nombre",
+            targetDays: (x.targetDays === null || x.targetDays === undefined || x.targetDays === "") ? null : Number(x.targetDays),
+            lastDone: x.lastDone || todayISO(),
+            createdAt: x.createdAt || todayISO(),
+          }));
+
+          events = normalized;
+          saveEvents(events);
+          render();
+          alert("Importación completada.");
+        } catch (err) {
+          alert("No se pudo importar: " + (err?.message || String(err)));
+        } finally {
+          fileImportEl.value = "";
         }
-
-        closeModal();
-        saveAndRender();
+      };
+      reader.readAsText(file);
     }
 
-    window.onclick = function(event) {
-        const modal = document.getElementById('editModal');
-        if (event.target == modal) closeModal();
-    }
+    // Wiring
+    btnAddEl.addEventListener("click", addEvent);
+    newNameEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addEvent(); });
 
-    // --- Renderizado ---
+    cardsEl.addEventListener("click", (e) => {
+      const target = e.target;
 
-    function saveAndRender() {
-        localStorage.setItem('playlistData', JSON.stringify(songsData));
-        renderAll();
-    }
+      if (target.classList.contains("done")) {
+        e.stopPropagation();
+        const id = target.dataset.id;
+        markDoneToday(id);
+        return;
+      }
 
-    function renderAll() {
-        renderTable();
-        updateChart();
-        updateStats();
-    }
+      const card = target.closest(".card");
+      if (card) openModal(card.dataset.id);
+    });
 
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        const activeSet = new Set(getActiveSongs()); 
-        
-        const displayData = songsData.map((item, idx) => ({ item, idx })).reverse();
+    btnCloseEl.addEventListener("click", closeModal);
+    btnCancelEl.addEventListener("click", closeModal);
+    btnSaveEl.addEventListener("click", saveEdit);
+    btnDeleteEl.addEventListener("click", deleteSelected);
+    btnDoneTodayEl.addEventListener("click", doneTodaySelected);
 
-        displayData.forEach(({ item, idx }) => {
-            const isActive = activeSet.has(item);
-            const tr = document.createElement('tr');
-            tr.className = isActive ? 'active-row' : 'inactive-row';
+    backdropEl.addEventListener("click", (e) => { if (e.target === backdropEl) closeModal(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !backdropEl.classList.contains("hidden")) closeModal();
+    });
 
-            tr.innerHTML = `
-                <td><strong>${item.cancion}</strong></td>
-                <td>${item.fecha_entrada}</td>
-                <td>${item.fecha_salida || '-'}</td>
-                <td>${item.dias_en_playlist || '-'}</td>
-                <td>
-                    ${item.Escuchas} 
-                    <button onclick="addOneEscucha(${idx})" class="btn-plus" title="Sumar 1 escucha">+1</button>
-                </td>
-                <td>
-                    ${!item.fecha_salida ? 
-                        `<button title="Dar Salida Hoy" onclick="markAsExit(${idx})" class="btn-success btn-icon">🏁</button>` : ''
-                    }
-                    <button title="Editar" onclick="openEditModal(${idx})" class="btn-outline btn-icon">✏️</button>
-                    <button title="Borrar" onclick="deleteSong(${idx})" class="btn-danger btn-icon">❌</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+    btnExportEl.addEventListener("click", exportJSON);
+    fileImportEl.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) importJSON(file);
+    });
 
-    function updateChart() {
-        const activeSongs = getActiveSongs();
-        const ctx = document.getElementById('listenChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: activeSongs.map(s => s.cancion),
-                datasets: [{
-                    label: 'Escuchas',
-                    data: activeSongs.map(s => s.Escuchas),
-                    backgroundColor: 'rgba(37, 99, 235, 0.6)',
-                    borderColor: 'rgba(37, 99, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    function updateStats() {
-        document.getElementById('totalSongsCount').textContent = `Total Histórico: ${songsData.length}`;
-        document.getElementById('activeSongsCount').textContent = `Activas (Top 25): ${getActiveSongs().length}`;
-    }
-
-    // --- CSV I/O ---
-
-    function exportCSV() {
-        const headers = ["cancion", "fecha_entrada", "fecha_salida", "dias_en_playlist", "Escuchas"];
-        let csvContent = headers.join(";") + "\r\n";
-        songsData.forEach(row => {
-            csvContent += `${row.cancion};${row.fecha_entrada};${row.fecha_salida};${row.dias_en_playlist};${row.Escuchas}\r\n`;
-        });
-        const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "playlist_backup.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    function handleFileSelect(evt) {
-        const file = evt.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = e => parseCSV(e.target.result);
-        reader.readAsText(file);
-    }
-
-    function parseCSV(text) {
-        const lines = text.trim().split(/\r\n|\n/);
-        const result = [];
-        for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(";");
-            if(cols.length < 2) continue;
-            result.push({
-                cancion: cols[0],
-                fecha_entrada: cols[1],
-                fecha_salida: cols[2] || "",
-                dias_en_playlist: cols[3] || "",
-                Escuchas: parseFloat(cols[4]) || 0
-            });
-        }
-        songsData = result;
-        saveAndRender();
-        alert(`Importadas ${result.length} canciones.`);
-    }
-
-    function clearData() {
-        if(confirm("¿Borrar todo?")) {
-            localStorage.removeItem('playlistData');
-            songsData = [];
-            renderAll();
-        }
-    }
-</script>
+    // First render
+    render();
+  </script>
 </body>
 </html>
